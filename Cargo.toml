@@ -13,3 +13,7 @@ tokio-macros = "2.4.0"
 [[example]]
 name = "tcp"
 path = "examples/tcp.rs"
+
+[[example]]
+name = "udp"
+path = "examples/udp.rs"
