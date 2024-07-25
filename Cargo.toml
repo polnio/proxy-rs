@@ -2,3 +2,14 @@
 name = "proxy-rs"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+tokio = { version = "1.39.1", features = ["rt-multi-thread", "sync", "net", "io-util"] }
+
+[dev-dependencies]
+tokio = { version = "1.39.1", features = ["macros"] }
+tokio-macros = "2.4.0"
+
+[[example]]
+name = "tcp"
+path = "examples/tcp.rs"
