@@ -40,24 +40,24 @@ impl Proxy {
     pub async fn run(mut self) {
         while let Some((msg, client_addr)) = self.get_message().await {
             self.send_message_to_remote(&msg, &client_addr).await;
-            self.send_event(Event::Message {
+            self.send_event(Event::from(event::Message {
                 from_addr: client_addr,
                 local_addr: self.local_addr(),
                 to_addr: self.remote_addr(),
                 message: msg,
-            })
+            }))
             .await;
 
             let Some(reply) = self.recv_reply().await else {
                 continue;
             };
             self.send_message_to_client(&reply, &client_addr).await;
-            self.send_event(Event::Message {
+            self.send_event(Event::from(event::Message {
                 from_addr: self.remote_addr(),
                 local_addr: self.local_addr(),
                 to_addr: client_addr,
                 message: reply,
-            })
+            }))
             .await;
         }
     }
@@ -75,12 +75,12 @@ impl Proxy {
         let (len, addr) = match self.socket.recv_from(&mut buf).await {
             Ok(result) => result,
             Err(error) => {
-                self.send_event(Event::MessageError {
+                self.send_event(Event::from(event::MessageError {
                     from_addr: None,
                     local_addr: self.local_addr(),
                     to_addr: self.remote_addr(),
                     error,
-                })
+                }))
                 .await;
                 return None;
             }
@@ -103,12 +103,12 @@ impl Proxy {
 
     async fn send_message_to_client(&self, msg: &str, addr: &SocketAddr) {
         if let Err(error) = self.socket.send_to(msg.as_bytes(), addr).await {
-            self.send_event(Event::MessageError {
+            self.send_event(Event::from(event::MessageError {
                 from_addr: Some(self.remote_addr()),
                 local_addr: self.local_addr(),
                 to_addr: *addr,
                 error,
-            })
+            }))
             .await;
         }
     }
@@ -119,12 +119,12 @@ impl Proxy {
             .send_to(msg.as_bytes(), &*self.remote_addrs)
             .await
         {
-            self.send_event(Event::MessageError {
+            self.send_event(Event::from(event::MessageError {
                 from_addr: Some(client_addr.clone()),
                 local_addr: self.local_addr(),
                 to_addr: self.remote_addr(),
                 error,
-            })
+            }))
             .await;
         }
     }

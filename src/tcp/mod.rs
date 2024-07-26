@@ -37,11 +37,11 @@ impl Proxy {
                     return;
                 };
 
-                this.send_event(Event::Connection {
+                this.send_event(Event::from(event::Connection {
                     client_addr: client_addr.clone(),
                     local_addr: this.local_addr(),
                     remote_addr: remote_addr.clone(),
-                })
+                }))
                 .await;
 
                 let (client_reader, client_writer) = client_stream.into_split();
@@ -70,11 +70,11 @@ impl Proxy {
                 client_handle.await.unwrap();
                 remote_handle.await.unwrap();
 
-                this.send_event(Event::Disconnection {
+                this.send_event(Event::from(event::Disconnection {
                     client_addr,
                     local_addr: this.local_addr(),
                     remote_addr,
-                })
+                }))
                 .await;
             });
         }
@@ -85,7 +85,7 @@ impl Proxy {
             Ok(result) => Some(result),
             Err(error) => {
                 let local_addr = self.local_addr();
-                self.send_event(Event::ConnectionError { local_addr, error })
+                self.send_event(Event::from(event::ConnectionError { local_addr, error }))
                     .await;
                 None
             }
@@ -100,7 +100,7 @@ impl Proxy {
             }
             Err(error) => {
                 let local_addr = self.local_addr();
-                self.send_event(Event::ConnectionError { local_addr, error })
+                self.send_event(Event::from(event::ConnectionError { local_addr, error }))
                     .await;
                 None
             }
@@ -124,12 +124,12 @@ impl Proxy {
                         Ok(n) => n,
                         Err(error) => {
                             let local_addr = self.local_addr();
-                            self.send_event(Event::MessageError {
+                            self.send_event(Event::from(event::MessageError {
                                 from_addr,
                                 local_addr,
                                 to_addr,
                                 error,
-                            })
+                            }))
                             .await;
                             break;
                         }
@@ -139,12 +139,12 @@ impl Proxy {
                     }
                     let message = String::from_utf8_lossy(&buffer[0..n]).to_string();
                     let _ = writer.write(&buffer[0..n]).await;
-                    self.send_event(Event::Message {
+                    self.send_event(Event::from(event::Message {
                         from_addr,
                         local_addr,
                         to_addr,
                         message,
-                    })
+                    }))
                     .await;
                 }
                 _ = close_receiver.recv() => {
