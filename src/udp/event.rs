@@ -4,16 +4,14 @@ use std::net::SocketAddr;
 pub enum Event {
     Message {
         from_addr: SocketAddr,
+        local_addr: SocketAddr,
         to_addr: SocketAddr,
         message: String,
     },
-    SendError {
+    MessageError {
+        from_addr: Option<SocketAddr>,
         local_addr: SocketAddr,
         to_addr: SocketAddr,
-        error: std::io::Error,
-    },
-    RecvError {
-        local_addr: SocketAddr,
         error: std::io::Error,
     },
 }

@@ -39,6 +39,7 @@ impl Proxy {
 
                 this.send_event(Event::Connection {
                     client_addr: client_addr.clone(),
+                    local_addr: this.local_addr(),
                     remote_addr: remote_addr.clone(),
                 })
                 .await;
@@ -71,6 +72,7 @@ impl Proxy {
 
                 this.send_event(Event::Disconnection {
                     client_addr,
+                    local_addr: this.local_addr(),
                     remote_addr,
                 })
                 .await;
@@ -82,7 +84,9 @@ impl Proxy {
         match self.listener.accept().await {
             Ok(result) => Some(result),
             Err(error) => {
-                self.send_event(Event::ConnectionError { error }).await;
+                let local_addr = self.local_addr();
+                self.send_event(Event::ConnectionError { local_addr, error })
+                    .await;
                 None
             }
         }
@@ -95,7 +99,9 @@ impl Proxy {
                 Some((result, socket_addr))
             }
             Err(error) => {
-                self.send_event(Event::ConnectionError { error }).await;
+                let local_addr = self.local_addr();
+                self.send_event(Event::ConnectionError { local_addr, error })
+                    .await;
                 None
             }
         }
@@ -109,6 +115,7 @@ impl Proxy {
     ) {
         let mut buffer = vec![0; self.buffer_size];
         let from_addr = reader.peer_addr().unwrap();
+        let local_addr = self.local_addr();
         let to_addr = writer.peer_addr().unwrap();
         loop {
             tokio::select! {
@@ -116,8 +123,10 @@ impl Proxy {
                     let n = match n {
                         Ok(n) => n,
                         Err(error) => {
+                            let local_addr = self.local_addr();
                             self.send_event(Event::MessageError {
                                 from_addr,
+                                local_addr,
                                 to_addr,
                                 error,
                             })
@@ -132,6 +141,7 @@ impl Proxy {
                     let _ = writer.write(&buffer[0..n]).await;
                     self.send_event(Event::Message {
                         from_addr,
+                        local_addr,
                         to_addr,
                         message,
                     })
@@ -142,6 +152,10 @@ impl Proxy {
                 }
             }
         }
+    }
+
+    fn local_addr(&self) -> SocketAddr {
+        self.listener.local_addr().unwrap()
     }
 
     async fn send_event(&self, event: Event) {
