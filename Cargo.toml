@@ -17,3 +17,7 @@ path = "examples/tcp.rs"
 [[example]]
 name = "udp"
 path = "examples/udp.rs"
+
+[[example]]
+name = "both"
+path = "examples/both.rs"
